@@ -2,7 +2,6 @@ import tweepy
 import configparser
 from os.path import exists
 import csv
-#import pandas
 
 #initialize api, not needed if using client
 def authentication():
@@ -20,44 +19,52 @@ def authentication():
     auth.set_access_token(access_token, access_token_secret)
 
     api = tweepy.API(auth)
-
     return api
 
 def search_tweets(client, api, num_tweets, hashtag, data_dict, index):
+    field_names = ['ID', 'Tweet_ID', 'UserID', 'Username', 'Time', 'Language', 'Text', 'Hashtags','Geo', 'Retweets', 'Replies', 'Likes']
     print("Searching tweets...")
+
     for tweet in tweepy.Paginator(client.search_recent_tweets, query=hashtag, 
-                              tweet_fields=['context_annotations', 'created_at', 'entities', 'author_id', 'text', 'lang', 'geo'], max_results=100).flatten(limit=num_tweets):
+                              tweet_fields=['created_at', 'author_id', 'text', 'lang', 'geo', 'public_metrics', 'conversation_id'], max_results=100).flatten(limit=num_tweets):
         
         #check all hashtags, if none, skip the tweet
         all_hashtags = find_hashtags(str(tweet.text))
         if all_hashtags == 0:
             continue
 
-        if(tweet.geo):
-            print(tweet.geo)
+
+        status  = api.get_status(tweet.conversation_id)
 
         #if the tweet has hashtags, add it to the data
         data_dict.append({'ID': index,
-                        'Username': tweet.author_id,
+                        'Tweet_ID': tweet.conversation_id,
+                        'UserID': tweet.author_id,
+                        'Username': status.user.name,
                         'Time': tweet.created_at,
                         'Language': tweet.lang,
                         'Text': str(tweet.text),
                         'Hashtags': find_hashtags(str(tweet.text)),
-                        'Geo': tweet.geo
+                        'Geo': tweet.geo,
+                        'Retweets': tweet.public_metrics['retweet_count'],
+                        'Replies': tweet.public_metrics['reply_count'],
+                        'Likes': status.favorite_count
                         })
         index += 1
+        #print(index % 100)
+        if index % 100 == 0:
+            print("Saving 100 new datapoints")
+            write_to_csv(data_dict, field_names)
     return data_dict, index
 
 #function for searching tweets
-def search_hashtags(client, api, num_tweets, hashtag1, hashtag2, hashtag3):
-    field_names = ['ID', 'Username', 'Time', 'Language', 'Text', 'Hashtags','Geo']
+def search_hashtags(start_index, client, api, num_tweets, hashtag1):
+    field_names = ['ID', 'Tweet_ID', 'UserID', 'Username', 'Time', 'Language', 'Text', 'Hashtags','Geo', 'Retweets', 'Replies', 'Likes']
     data_dict = []
 
-    index = 0
+    index = start_index
 
     data_dict, index = search_tweets(client, api, num_tweets, hashtag1, data_dict, index)
-    data_dict, index = search_tweets(client, api, num_tweets, hashtag2, data_dict, index)
-    data_dict, index = search_tweets(client, api, num_tweets, hashtag3, data_dict, index)
     
     #write data to csv file
     print("Generating csv file...")
@@ -110,10 +117,9 @@ if __name__ == '__main__':
     config.read('config.ini')
 
     client = tweepy.Client(config['twitter']['bearer_token'])
+    
+    new_starting_index = 2500
 
-    #search tweets with a certain hashtag
-    search_hashtags(client, api, 1500, "#climatechange OR #climatecrisis OR #climateemergency", 
-    "#climaterealists OR #climatestrikeonline",
-    "#globalwarming OR #agw OR #savetheplanet" )
+    search_hashtags(new_starting_index, client, api, 5000, "#climatechange OR #climatecrisis OR #climateemergency OR #climaterealists OR #climatestrikeonline OR #globalwarming OR #agw OR #savetheplanet")
     print("DONE!")
     
