@@ -32,7 +32,9 @@ def search_tweets(client, api, num_tweets, hashtag, data_dict, index):
         all_hashtags = find_hashtags(str(tweet.text))
         if all_hashtags == 0:
             continue
-
+        tweet_text = str(tweet.text)
+        if tweet_text.startswith("RT"):
+            continue
 
         status  = api.get_status(tweet.conversation_id)
 
@@ -118,7 +120,7 @@ if __name__ == '__main__':
 
     client = tweepy.Client(config['twitter']['bearer_token'])
     
-    new_starting_index = 2500
+    new_starting_index = 3400
 
     search_hashtags(new_starting_index, client, api, 5000, "#climatechange OR #climatecrisis OR #climateemergency OR #climaterealists OR #climatestrikeonline OR #globalwarming OR #agw OR #savetheplanet")
     print("DONE!")
