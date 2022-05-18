@@ -122,6 +122,6 @@ if __name__ == '__main__':
     
     new_starting_index = 3400
 
-    search_hashtags(new_starting_index, client, api, 5000, "#climatechange OR #climatecrisis OR #climateemergency OR #climaterealists OR #climatestrikeonline OR #globalwarming OR #agw OR #savetheplanet")
+    search_hashtags(new_starting_index, client, api, 5000, "#climatechange OR #climatecrisis OR #climateemergency OR #saveearth OR #climateaction OR #globalwarming OR #savetheplanet")
     print("DONE!")
     
